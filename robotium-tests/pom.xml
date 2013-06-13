@@ -22,7 +22,7 @@
         <dependency>
             <groupId>com.mopub.mobileads</groupId>
             <artifactId>robotium-sample</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.14.0.0</version>
             <scope>provided</scope>
         </dependency>
 
@@ -37,9 +37,9 @@
 
         <!--android -->
         <dependency>
-            <groupId>com.google.android</groupId>
+            <groupId>android</groupId>
             <artifactId>android</artifactId>
-            <version>4.1.2</version>
+            <version>4.1.2_r4</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
