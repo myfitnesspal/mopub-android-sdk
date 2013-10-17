@@ -1,13 +1,15 @@
 package com.mopub.mobileads.test;
 
-import android.*;
 import android.R;
 import android.test.ActivityInstrumentationTestCase2;
 import com.jayway.android.robotium.solo.Solo;
 import com.mopub.mobileads.*;
 import com.mopub.mobileads.robotium.RobotiumTestSupportActivity;
 
+import static com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
+
 public class RobotiumTestSupportActivityTest extends ActivityInstrumentationTestCase2<RobotiumTestSupportActivity>{
+    private static final long NETWORK_SLEEP_TIME = 3000;
     private Solo solo;
 
     public RobotiumTestSupportActivityTest() {
@@ -33,10 +35,13 @@ public class RobotiumTestSupportActivityTest extends ActivityInstrumentationTest
         moPubView.setBannerAdListener(listener);
 
         solo.clickOnButton("Load Banner");
-        Thread.sleep(2000);
+        Thread.sleep(NETWORK_SLEEP_TIME);
+        assertTrue("Banner was loaded.", listener.bannerWasLoaded());
+
         solo.clickOnView(moPubView);
-        Thread.sleep(2000);
-        assertTrue("Banner should click", listener.bannerWasClicked());
+        Thread.sleep(NETWORK_SLEEP_TIME);
+        assertTrue("Banner was clicked.", listener.bannerWasClicked());
+
         solo.assertCurrentActivity("expected an MraidBrowser", MraidBrowser.class);
     }
 
@@ -46,16 +51,16 @@ public class RobotiumTestSupportActivityTest extends ActivityInstrumentationTest
         ((RobotiumTestSupportActivity) solo.getCurrentActivity()).setInterstitialListener(listener);
 
         solo.clickOnButton("Load Interstitial");
-        Thread.sleep(2000);
-        assertTrue("Interstitial should load", listener.interstitialWasLoaded());
+        Thread.sleep(NETWORK_SLEEP_TIME);
+        assertTrue("Interstitial was loaded.", listener.interstitialWasLoaded());
 
         solo.clickOnButton("Show Interstitial");
-        Thread.sleep(2000);
-        assertTrue("Interstitial should show", listener.interstitialWasShown());
+        Thread.sleep(NETWORK_SLEEP_TIME);
+        assertTrue("Interstitial was shown.", listener.interstitialWasShown());
         solo.assertCurrentActivity("expected MoPubActivity", MoPubActivity.class);
 
         solo.clickOnView(solo.getCurrentActivity().findViewById(R.id.content));
-        Thread.sleep(2000);
+        Thread.sleep(NETWORK_SLEEP_TIME);
         solo.assertCurrentActivity("expected MraidBrowser", MraidBrowser.class);
     }
 
@@ -65,14 +70,14 @@ public class RobotiumTestSupportActivityTest extends ActivityInstrumentationTest
         ((RobotiumTestSupportActivity) solo.getCurrentActivity()).setInterstitialListener(listener);
 
         solo.clickOnButton("Load Interstitial");
-        Thread.sleep(2000);
+        Thread.sleep(NETWORK_SLEEP_TIME);
 
         solo.clickOnButton("Show Interstitial");
-        Thread.sleep(2000);
+        Thread.sleep(NETWORK_SLEEP_TIME);
 
         solo.clickOnImageButton(0);
         Thread.sleep(500);
-        assertTrue("Interstitial should dismiss", listener.interstitialWasDismissed());
+        assertTrue("Interstitial was dismissed.", listener.interstitialWasDismissed());
     }
 
     public void testMoPubInterstitialLoadShowAndDismissWithBackButton() throws Exception {
@@ -81,13 +86,13 @@ public class RobotiumTestSupportActivityTest extends ActivityInstrumentationTest
         ((RobotiumTestSupportActivity) solo.getCurrentActivity()).setInterstitialListener(listener);
 
         solo.clickOnButton("Load Interstitial");
-        Thread.sleep(2000);
+        Thread.sleep(NETWORK_SLEEP_TIME);
 
         solo.clickOnButton("Show Interstitial");
-        Thread.sleep(2000);
+        Thread.sleep(NETWORK_SLEEP_TIME);
 
         solo.goBack();
-        assertTrue("Interstitial should dismiss", listener.interstitialWasDismissed());
+        assertTrue("Interstitial was dismissed.", listener.interstitialWasDismissed());
     }
 
     private void enterBannerAdUnitId() {
@@ -138,10 +143,11 @@ public class RobotiumTestSupportActivityTest extends ActivityInstrumentationTest
         }
     }
 
-    private static class TestInterstitialAdListener implements MoPubInterstitial.InterstitialAdListener {
+    private static class TestInterstitialAdListener implements InterstitialAdListener {
         private boolean interstitialWasLoaded;
         private boolean interstitialWasShown;
         private boolean interstitialWasDismissed;
+        private boolean interstitialWasClicked;
 
         private boolean interstitialWasLoaded() {
             return interstitialWasLoaded;
@@ -149,6 +155,10 @@ public class RobotiumTestSupportActivityTest extends ActivityInstrumentationTest
 
         private boolean interstitialWasShown() {
             return interstitialWasShown;
+        }
+
+        private boolean isInterstitialWasClicked() {
+            return interstitialWasClicked;
         }
 
         public boolean interstitialWasDismissed() {
@@ -170,6 +180,11 @@ public class RobotiumTestSupportActivityTest extends ActivityInstrumentationTest
         }
 
         @Override
+        public void onInterstitialClicked(MoPubInterstitial interstitial) {
+            interstitialWasClicked = true;
+        }
+
+        @Override
         public void onInterstitialDismissed(MoPubInterstitial interstitial) {
             interstitialWasDismissed = true;
         }
@@ -177,6 +192,7 @@ public class RobotiumTestSupportActivityTest extends ActivityInstrumentationTest
         void reset() {
             interstitialWasLoaded = false;
             interstitialWasShown = false;
+            interstitialWasClicked = false;
             interstitialWasDismissed = false;
         }
     }

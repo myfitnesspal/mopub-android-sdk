@@ -20,6 +20,7 @@ import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.net.ConnectivityManager.*;
 import static android.telephony.TelephonyManager.NETWORK_TYPE_UNKNOWN;
 import static com.mopub.mobileads.AdUrlGenerator.MoPubNetworkType;
+import static com.mopub.mobileads.util.Strings.isEmpty;
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.robolectric.Robolectric.application;
 import static org.robolectric.Robolectric.shadowOf;
@@ -68,7 +69,7 @@ public class AdUrlGeneratorTest {
 
     @Test
     public void generateAdUrl_shouldIncludeAllFields() throws Exception {
-        String expectedAdUrl = new AdUrlBuilder(expectedUdidSha)
+        final String expectedAdUrl = new AdUrlBuilder(expectedUdidSha)
                 .withAdUnitId("adUnitId")
                 .withQuery("key%3Avalue")
                 .withLatLon("20.1%2C30.0", "1")
@@ -76,6 +77,7 @@ public class AdUrlGeneratorTest {
                 .withMnc("456")
                 .withCountryIso("expected%20country")
                 .withCarrierName("expected%20carrier")
+                .withExternalStoragePermission(false)
                 .build();
 
         shadowTelephonyManager.setNetworkOperator("123456");
@@ -235,6 +237,7 @@ public class AdUrlGeneratorTest {
         private String countryIso = "";
         private String carrierName = "";
         private MoPubNetworkType networkType = MoPubNetworkType.MOBILE;
+        private int externalStoragePermission;
 
         public AdUrlBuilder(String expectedUdidSha) {
             this.expectedUdidSha = expectedUdidSha;
@@ -243,21 +246,22 @@ public class AdUrlGeneratorTest {
         public String build() {
             return "http://ads.mopub.com/m/ad" +
                     "?v=6" +
-                    "&id=" + adUnitId +
+                    paramIfNotEmpty("id", adUnitId) +
                     "&nv=" + MoPub.SDK_VERSION +
                     "&udid=sha%3A" + expectedUdidSha +
-                    (query.isEmpty() ? "" : "&q=" + query )+
-                    (latLon.isEmpty() ? "" : "&ll=" + latLon + "&lla=" + locationAccuracy )+
+                    paramIfNotEmpty("q", query) +
+                    (isEmpty(latLon) ? "" : "&ll=" + latLon + "&lla=" + locationAccuracy) +
                     "&z=-0700" +
                     "&o=u" +
                     "&sc_a=1.0" +
                     "&mr=1" +
-                    "&mcc=" + mcc +
-                    "&mnc=" + mnc +
-                    "&iso=" + countryIso +
-                    "&cn=" + carrierName +
+                    paramIfNotEmpty("mcc", mcc) +
+                    paramIfNotEmpty("mnc", mnc) +
+                    paramIfNotEmpty("iso", countryIso) +
+                    paramIfNotEmpty("cn", carrierName) +
                     "&ct=" + networkType +
-                    "&av=1.0";
+                    "&av=1.0" +
+                    "&android_perms_ext_storage=" + externalStoragePermission;
         }
 
         public AdUrlBuilder withAdUnitId(String adUnitId) {
@@ -299,6 +303,19 @@ public class AdUrlGeneratorTest {
         public AdUrlBuilder withNetworkType(MoPubNetworkType networkType) {
             this.networkType = networkType;
             return this;
+        }
+
+        public AdUrlBuilder withExternalStoragePermission(boolean enabled) {
+            this.externalStoragePermission = enabled ? 1 : 0;
+            return this;
+        }
+
+        private String paramIfNotEmpty(String key, String value) {
+            if (isEmpty(value)) {
+                return "";
+            } else {
+                return "&" + key + "=" + value;
+            }
         }
     }
 }

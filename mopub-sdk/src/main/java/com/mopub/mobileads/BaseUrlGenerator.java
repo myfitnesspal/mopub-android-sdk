@@ -5,6 +5,8 @@ import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.provider.Settings;
 
+import static com.mopub.mobileads.util.Strings.isEmpty;
+
 public abstract class BaseUrlGenerator {
     private StringBuilder mStringBuilder;
     private boolean mFirstParam;
@@ -21,11 +23,14 @@ public abstract class BaseUrlGenerator {
     }
 
     protected void addParam(String key, String value) {
+        if (value == null || isEmpty(value)) {
+            return;
+        }
+
         mStringBuilder.append(getParamDelimiter());
         mStringBuilder.append(key);
         mStringBuilder.append("=");
-        String nonNullValue = value != null ? value : "";
-        mStringBuilder.append(Uri.encode(nonNullValue));
+        mStringBuilder.append(Uri.encode(value));
     }
 
     private String getParamDelimiter() {
@@ -42,6 +47,10 @@ public abstract class BaseUrlGenerator {
 
     protected void setAppVersion(String appVersion) {
         addParam("av", appVersion);
+    }
+
+    protected void setExternalStoragePermission(boolean isExternalStoragePermissionGranted) {
+        addParam("android_perms_ext_storage", isExternalStoragePermissionGranted ? "1" : "0");
     }
 
     protected void setUdid(String udid) {

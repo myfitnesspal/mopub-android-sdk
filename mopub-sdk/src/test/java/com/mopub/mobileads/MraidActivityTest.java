@@ -2,7 +2,9 @@ package com.mopub.mobileads;
 
 import android.content.ComponentName;
 import android.content.Intent;
+import android.os.Build;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageButton;
 import com.mopub.mobileads.test.support.SdkTestRunner;
 import com.mopub.mobileads.test.support.TestMraidViewFactory;
@@ -14,16 +16,18 @@ import org.mockito.ArgumentCaptor;
 import org.robolectric.Robolectric;
 import org.robolectric.shadows.ShadowLocalBroadcastManager;
 
-import static com.mopub.mobileads.BaseActivity.ACTION_INTERSTITIAL_DISMISS;
-import static com.mopub.mobileads.BaseActivity.HTML_INTERSTITIAL_INTENT_FILTER;
-import static com.mopub.mobileads.BaseActivity.SOURCE_KEY;
+import static com.mopub.mobileads.AdFetcher.HTML_RESPONSE_BODY_KEY;
+import static com.mopub.mobileads.BaseInterstitialActivity.ACTION_INTERSTITIAL_DISMISS;
+import static com.mopub.mobileads.BaseInterstitialActivity.ACTION_INTERSTITIAL_SHOW;
+import static com.mopub.mobileads.BaseInterstitialActivity.HTML_INTERSTITIAL_INTENT_FILTER;
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.robolectric.Robolectric.shadowOf;
 
 @RunWith(SdkTestRunner.class)
-public class MraidActivityTest extends BaseActivityTest {
+public class MraidActivityTest extends BaseInterstitialActivityTest {
 
     private MraidView mraidView;
 
@@ -42,11 +46,40 @@ public class MraidActivityTest extends BaseActivityTest {
         subject.onCreate(null);
 
         assertThat(getContentView(subject).getChildAt(0)).isSameAs(mraidView);
-        verify(mraidView).setOnReadyListener(any(MraidView.OnReadyListener.class));
+        verify(mraidView).setMraidListener(any(MraidView.MraidListener.class));
         verify(mraidView).setOnCloseButtonStateChange(any(MraidView.OnCloseButtonStateChangeListener.class));
-        verify(mraidView).setOnCloseListener(any(MraidView.OnCloseListener.class));
 
         verify(mraidView).loadHtmlData(EXPECTED_SOURCE);
+    }
+
+    @Test
+    public void onCreate_shouldBroadcastInterstitialShow() throws Exception {
+        Intent expectedIntent = new Intent(ACTION_INTERSTITIAL_SHOW);
+        ShadowLocalBroadcastManager.getInstance(subject).registerReceiver(broadcastReceiver, HTML_INTERSTITIAL_INTENT_FILTER);
+
+        subject.onCreate(null);
+
+        verify(broadcastReceiver).onReceive(eq(subject), eq(expectedIntent));
+    }
+
+    @Test
+    public void onCreate_whenICS_shouldSetHardwareAcceleratedFlag() throws Exception {
+        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", 14);
+
+        subject.onCreate(null);
+
+        boolean hardwareAccelerated = shadowOf(subject.getWindow()).getFlag(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+        assertThat(hardwareAccelerated).isTrue();
+    }
+
+    @Test
+    public void onCreate_whenPreICS_shouldNotSetHardwareAcceleratedFlag() throws Exception {
+        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", 13);
+
+        subject.onCreate(null);
+
+        boolean hardwareAccelerated = shadowOf(subject.getWindow()).getFlag(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+        assertThat(hardwareAccelerated).isFalse();
     }
 
     @Test
@@ -66,11 +99,11 @@ public class MraidActivityTest extends BaseActivityTest {
     public void getAdView_shouldSetupOnReadyListener() throws Exception {
         subject.onCreate(null);
         resetMockedView(mraidView);
-        ArgumentCaptor<MraidView.OnReadyListener> captor = ArgumentCaptor.forClass(MraidView.OnReadyListener.class);
+        ArgumentCaptor<MraidView.MraidListener> captor = ArgumentCaptor.forClass(MraidView.MraidListener.class);
         View actualAdView = subject.getAdView();
 
         assertThat(actualAdView).isSameAs(mraidView);
-        verify(mraidView).setOnReadyListener(captor.capture());
+        verify(mraidView).setMraidListener(captor.capture());
 
         subject.hideInterstitialCloseButton();
         captor.getValue().onReady(null);
@@ -102,21 +135,38 @@ public class MraidActivityTest extends BaseActivityTest {
     public void getAdView_shouldSetupOnCloseListener() throws Exception {
         subject.onCreate(null);
         resetMockedView(mraidView);
-        ArgumentCaptor<MraidView.OnCloseListener> captor = ArgumentCaptor.forClass(MraidView.OnCloseListener.class);
+        ArgumentCaptor<MraidView.MraidListener> captor = ArgumentCaptor.forClass(MraidView.MraidListener.class);
         View actualAdView = subject.getAdView();
 
         assertThat(actualAdView).isSameAs(mraidView);
-        verify(mraidView).setOnCloseListener(captor.capture());
+        verify(mraidView).setMraidListener(captor.capture());
 
         captor.getValue().onClose(null, null);
 
         ANDROID.assertThat(subject).isFinishing();
     }
 
+    @Test
+    public void onPause_shouldOnPauseMraidView() throws Exception {
+        subject.onCreate(null);
+        ((MraidActivity)subject).onPause();
+
+        verify(mraidView).onPause();
+    }
+
+    @Test
+    public void onResume_shouldResumeMraidView() throws Exception {
+        subject.onCreate(null);
+        ((MraidActivity)subject).onPause();
+        ((MraidActivity)subject).onResume();
+
+        verify(mraidView).onResume();
+    }
+
     private Intent createMraidActivityIntent(String expectedSource) {
         Intent mraidActivityIntent = new Intent();
         mraidActivityIntent.setComponent(new ComponentName("", ""));
-        mraidActivityIntent.putExtra(SOURCE_KEY, expectedSource);
+        mraidActivityIntent.putExtra(HTML_RESPONSE_BODY_KEY, expectedSource);
         return mraidActivityIntent;
     }
 }

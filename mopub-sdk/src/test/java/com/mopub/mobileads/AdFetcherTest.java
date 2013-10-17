@@ -1,6 +1,9 @@
 package com.mopub.mobileads;
 
+import android.os.Build;
+import com.mopub.mobileads.factories.AdFetchTaskFactory;
 import com.mopub.mobileads.test.support.SdkTestRunner;
+import com.mopub.mobileads.test.support.TestAdFetchTaskFactory;
 import com.mopub.mobileads.test.support.TestHttpResponseWithHeaders;
 import org.apache.http.HttpResponse;
 import org.junit.Before;
@@ -10,12 +13,16 @@ import org.robolectric.Robolectric;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 import static com.mopub.mobileads.AdFetcher.*;
-import static com.mopub.mobileads.AdTypeTranslator.MRAID_BANNER;
-import static org.fest.assertions.api.Assertions.assertThat;
+import static com.mopub.mobileads.util.VersionCode.HONEYCOMB_MR2;
+import static com.mopub.mobileads.util.VersionCode.ICE_CREAM_SANDWICH;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.verify;
 
@@ -84,15 +91,26 @@ public class AdFetcherTest {
     }
 
     @Test
-    public void extractCustomEventMraidAdLoadTask_shouldCreateAnEncodedJsonString() throws Exception {
-        String expectedJson = "{\"Mraid-Html-Data\":\"%3Chtml%3E%3C%2Fhtml%3E\"}";
-        AdFetchTask adFetchTask = new AdFetchTask(subject);
-        String htmlData = "<html></html>";
-        response = new TestHttpResponseWithHeaders(200, htmlData);
-        response.addHeader(AD_TYPE_HEADER, "mraid");
+    public void fetchAdForUrl_whenApiLevelIsAtLeastICS_shouldExecuteUsingAnExecutor() throws Exception {
+        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", ICE_CREAM_SANDWICH.getApiLevel());
+        AdFetchTaskFactory.setInstance(new TestAdFetchTaskFactory());
+        AdFetchTask adFetchTask = TestAdFetchTaskFactory.getSingletonMock();
 
-        CustomEventAdLoadTask customEventTask = (CustomEventAdLoadTask) adFetchTask.extractCustomEventMraidAdLoadTask(response, MRAID_BANNER);
-        assertThat(customEventTask.mParamsMap.get(CUSTOM_EVENT_NAME_HEADER)).isEqualTo(MRAID_BANNER);
-        assertThat(customEventTask.mParamsMap.get(CUSTOM_EVENT_DATA_HEADER)).isEqualTo(expectedJson);
+        subject.fetchAdForUrl("some url");
+
+        verify(adFetchTask).executeOnExecutor(eq(AdFetchTask.THREAD_POOL_EXECUTOR), eq("some url"));
+        verify(adFetchTask, never()).execute(anyString());
+    }
+
+    @Test
+    public void fetchAdForUrl_whenApiLevelIsBelowICS_shouldExecuteWithoutAnExecutor() throws Exception {
+        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", HONEYCOMB_MR2.getApiLevel());
+        AdFetchTaskFactory.setInstance(new TestAdFetchTaskFactory());
+        AdFetchTask adFetchTask = TestAdFetchTaskFactory.getSingletonMock();
+
+        subject.fetchAdForUrl("some url");
+
+        verify(adFetchTask, never()).executeOnExecutor(any(Executor.class), anyString());
+        verify(adFetchTask).execute(eq("some url"));
     }
 }

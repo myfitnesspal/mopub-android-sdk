@@ -18,6 +18,7 @@ import static com.mopub.mobileads.MoPubErrorCode.NETWORK_TIMEOUT;
 import static com.mopub.mobileads.MoPubErrorCode.UNSPECIFIED;
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,6 +39,8 @@ public class CustomEventInterstitialAdapterTest {
     @Before
     public void setUp() throws Exception {
         moPubInterstitial = mock(MoPubInterstitial.class);
+        stub(moPubInterstitial.getAdTimeoutDelay()).toReturn(null);
+
         subject = new CustomEventInterstitialAdapter(moPubInterstitial, CLASS_NAME, JSON_PARAMS);
 
         expectedLocalExtras = new HashMap<String, Object>();
@@ -50,9 +53,37 @@ public class CustomEventInterstitialAdapterTest {
     }
 
     @Test
-    public void timeout_shouldSignalFailureAndInvalidate() throws Exception {
+    public void timeout_shouldSignalFailureAndInvalidateWithDefaultDelay() throws Exception {
         subject.loadInterstitial();
-        Robolectric.idleMainLooper(CustomEventInterstitialAdapter.TIMEOUT_DELAY - 1);
+        Robolectric.idleMainLooper(CustomEventInterstitialAdapter.DEFAULT_INTERSTITIAL_TIMEOUT_DELAY - 1);
+        verify(interstitialAdapterListener, never()).onCustomEventInterstitialFailed(eq(NETWORK_TIMEOUT));
+        assertThat(subject.isInvalidated()).isFalse();
+
+        Robolectric.idleMainLooper(1);
+        verify(interstitialAdapterListener).onCustomEventInterstitialFailed(eq(NETWORK_TIMEOUT));
+        assertThat(subject.isInvalidated()).isTrue();
+    }
+
+    @Test
+    public void timeout_withNegativeAdTimeoutDelay_shouldSignalFailureAndInvalidateWithDefaultDelay() throws Exception {
+        stub(moPubInterstitial.getAdTimeoutDelay()).toReturn(-1);
+
+        subject.loadInterstitial();
+        Robolectric.idleMainLooper(CustomEventInterstitialAdapter.DEFAULT_INTERSTITIAL_TIMEOUT_DELAY - 1);
+        verify(interstitialAdapterListener, never()).onCustomEventInterstitialFailed(eq(NETWORK_TIMEOUT));
+        assertThat(subject.isInvalidated()).isFalse();
+
+        Robolectric.idleMainLooper(1);
+        verify(interstitialAdapterListener).onCustomEventInterstitialFailed(eq(NETWORK_TIMEOUT));
+        assertThat(subject.isInvalidated()).isTrue();
+    }
+
+    @Test
+    public void timeout_withNonNullAdTimeoutDelay_shouldSignalFailureAndInvalidateWithCustomDelay() throws Exception {
+        stub(moPubInterstitial.getAdTimeoutDelay()).toReturn(77);
+
+        subject.loadInterstitial();
+        Robolectric.idleMainLooper(77000 - 1);
         verify(interstitialAdapterListener, never()).onCustomEventInterstitialFailed(eq(NETWORK_TIMEOUT));
         assertThat(subject.isInvalidated()).isFalse();
 
@@ -158,7 +189,7 @@ public class CustomEventInterstitialAdapterTest {
     public void onInterstitialShown_shouldSignalAdapterListener() throws Exception {
         subject.onInterstitialShown();
 
-        verify(interstitialAdapterListener).onCustomEventInterstitialShown();
+        verify(interstitialAdapterListener).onCustomEventInterstitialShown(true);
     }
 
     @Test
@@ -218,8 +249,19 @@ public class CustomEventInterstitialAdapterTest {
 
         verify(interstitialAdapterListener, never()).onCustomEventInterstitialLoaded();
         verify(interstitialAdapterListener, never()).onCustomEventInterstitialFailed(any(MoPubErrorCode.class));
-        verify(interstitialAdapterListener, never()).onCustomEventInterstitialShown();
+        verify(interstitialAdapterListener, never()).onCustomEventInterstitialShown(anyBoolean());
         verify(interstitialAdapterListener, never()).onCustomEventInterstitialClicked();
         verify(interstitialAdapterListener, never()).onCustomEventInterstitialDismissed();
+    }
+
+    @Test
+    public void shouldNotTrackImpressionsWhenHoldingAnHtmlInterstitial() throws Exception {
+        subject.onInterstitialShown();
+        verify(interstitialAdapterListener).onCustomEventInterstitialShown(eq(true));
+
+        subject.setCustomEventInterstitial(mock(HtmlInterstitial.class));
+
+        subject.onInterstitialShown();
+        verify(interstitialAdapterListener).onCustomEventInterstitialShown(eq(false));
     }
 }

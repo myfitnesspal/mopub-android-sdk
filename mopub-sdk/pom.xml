@@ -11,13 +11,13 @@
 
     <groupId>com.mopub.mobileads</groupId>
     <artifactId>mopub-sdk</artifactId>
-    <version>1.14.0.0</version>
-    <packaging>apklib</packaging>
+    <version>1.15.2.2</version>
+    <packaging>jar</packaging>
     <name>MoPub SDK</name>
     <description>The SDK for MoPub developers.</description>
 
     <properties>
-        <robolectric.version>2.1-SNAPSHOT</robolectric.version>
+        <robolectric.version>2.1</robolectric.version>
     </properties>
 
     <dependencies>

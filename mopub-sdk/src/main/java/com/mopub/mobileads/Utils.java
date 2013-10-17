@@ -32,14 +32,18 @@
 
 package com.mopub.mobileads;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class Utils {
@@ -103,9 +107,9 @@ public class Utils {
         return builder.toString();
     }
 
-    public static void invokeInstanceMethod(Object instance, String methodName) throws Exception {
-        Method method = instance.getClass().getDeclaredMethod(methodName);
-        method.setAccessible(true);
-        method.invoke(instance);
+    public static boolean deviceCanHandleIntent(Context context, Intent intent) {
+        PackageManager packageManager = context.getPackageManager();
+        List<ResolveInfo> activities = packageManager.queryIntentActivities(intent, 0);
+        return (activities.size() > 0);
     }
 }
