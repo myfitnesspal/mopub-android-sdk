@@ -4,14 +4,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>5</version>
+        <groupId>com.mopub.mobileads</groupId>
+        <artifactId>mopub-android</artifactId>
+        <version>1.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>com.mopub.mobileads</groupId>
     <artifactId>robotium-sample</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${mopub.sdk.version}</version>
     <packaging>apk</packaging>
     <name>MoPub Robotium Sample</name>
     <description>Sample application that can be exercised by Robotium.</description>
@@ -22,7 +23,7 @@
         <dependency>
             <groupId>com.mopub.mobileads</groupId>
             <artifactId>mopub-sdk</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${mopub.sdk.version}</version>
             <type>jar</type>
         </dependency>
 

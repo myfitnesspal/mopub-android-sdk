@@ -21,4 +21,8 @@
         <module>robotium-sample</module>
         <module>robotium-tests</module>
     </modules>
+
+    <properties>
+        <mopub.sdk.version>1.16.0.0</mopub.sdk.version>
+    </properties>
 </project>

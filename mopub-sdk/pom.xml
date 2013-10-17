@@ -4,14 +4,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>5</version>
+        <groupId>com.mopub.mobileads</groupId>
+        <artifactId>mopub-android</artifactId>
+        <version>1.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>com.mopub.mobileads</groupId>
     <artifactId>mopub-sdk</artifactId>
-    <version>1.15.2.2</version>
+    <version>${mopub.sdk.version}</version>
     <packaging>jar</packaging>
     <name>MoPub SDK</name>
     <description>The SDK for MoPub developers.</description>
