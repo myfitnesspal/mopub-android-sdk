@@ -10,7 +10,6 @@ Here's how to update and integrate this SDK into the MFP Android App.
 
 ```
 	% git fetch upstream
-
 	% git merge upstream/master
 ```
 
@@ -32,11 +31,8 @@ Here's how to update and integrate this SDK into the MFP Android App.
 
 ```
 	% cd ../android-app/maven_repo_3rd_party
-
 	% install.sh -f /your/.m2/repo/com/mopub/mobileads/mopub-sdk/<version>/mopub-sdk-<version>.jar -g com.mopub.mobileads -a mopub-sdk -v <version> -p jar
-
 	% git add com/mopub/mobileads
-
 	% git commit -a -m "update to version <version> of mopub"
 	% git push origin <branchname>
 ```
