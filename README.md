@@ -1,3 +1,40 @@
+# MoPub Android SDK for MFP Android App
+
+Here's how to update and integrate this SDK into the MFP Android App.
+
+- **[https://help.github.com/articles/syncing-a-fork][Set up your fork with an upstream]**
+
+  Here you set up your repo so that you can easily fetch upstream changes from mopub's repo.
+
+- Fetch and merge upstream every time it changes
+
+	% git fetch upstream
+
+	% git merge upstream/master
+
+- Change pom.xml to reflect the new version number
+
+    <properties>
+        <mopub.sdk.version>1.17.2.0</mopub.sdk.version>
+    </properties>
+
+- Build and install into maven repo
+
+	% mvn clean install
+
+- Install into android app local repo
+
+	% cd ../android-app/maven_repo_3rd_party
+
+	% install.sh -f /your/.m2/repo/com/mopub/mobileads/mopub-sdk/<version>/mopub-sdk-<version>.jar -g com.mopub.mobileads -a mopub-sdk -v <version> -p jar
+
+	% git add com/mopub/mobileads
+
+	% git commit -a -m "update to version <version> of mopub"
+
+	% git push origin <branchname>
+
+
 # MoPub Android SDK
 
 Thanks for taking a look at MoPub! We take pride in having an easy-to-use, flexible monetization solution that works across multiple platforms.
