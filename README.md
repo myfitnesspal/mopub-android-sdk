@@ -14,11 +14,11 @@ Here's how to update and integrate this SDK into the MFP Android App.
 
 - Change pom.xml to reflect the new version number
 
-...
+```xml
 	<properties>
 		<mopub.sdk.version>1.17.2.0</mopub.sdk.version>
 	</properties>
-...
+```
 
 - Build and install into maven repo
 
