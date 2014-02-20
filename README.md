@@ -43,7 +43,7 @@ Here's how to update and integrate this SDK into the MFP Android App.
     <dependency>
         <groupId>com.mopub.mobileads</groupId>
         <artifactId>mopub-sdk</artifactId>
-        <version>1.17.2.0</version>
+        <version>VERSION</version>
         <exclusions>
             <exclusion>
                 <groupId>com.google.android</groupId>
