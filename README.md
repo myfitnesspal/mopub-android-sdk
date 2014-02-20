@@ -2,9 +2,9 @@
 
 Here's how to update and integrate this SDK into the MFP Android App.
 
-- **[https://help.github.com/articles/syncing-a-fork][Set up your fork with an upstream]**
+- Set up your github fork with an upstream if necessary
 
-  Here you set up your repo so that you can easily fetch upstream changes from mopub's repo.
+  **[Set up your fork with an upstream](https://help.github.com/articles/syncing-a-fork)**
 
 - Fetch and merge upstream every time it changes
 
@@ -14,9 +14,9 @@ Here's how to update and integrate this SDK into the MFP Android App.
 
 - Change pom.xml to reflect the new version number
 
-    <properties>
-        <mopub.sdk.version>1.17.2.0</mopub.sdk.version>
-    </properties>
+	<properties>
+		<mopub.sdk.version>1.17.2.0</mopub.sdk.version>
+	</properties>
 
 - Build and install into maven repo
 
