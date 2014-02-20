@@ -23,6 +23,6 @@
     </modules>
 
     <properties>
-        <mopub.sdk.version>1.16.0.0</mopub.sdk.version>
+        <mopub.sdk.version>1.17.2.0</mopub.sdk.version>
     </properties>
 </project>
