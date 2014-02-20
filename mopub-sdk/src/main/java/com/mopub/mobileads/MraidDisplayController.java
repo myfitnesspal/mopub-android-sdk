@@ -71,7 +71,7 @@ import com.mopub.mobileads.MraidView.PlacementType;
 import com.mopub.mobileads.MraidView.ViewState;
 import com.mopub.mobileads.factories.HttpClientFactory;
 import com.mopub.mobileads.util.HttpResponses;
-import com.mopub.mobileads.util.MraidUtils;
+import com.mopub.mobileads.util.Mraids;
 import com.mopub.mobileads.util.Streams;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -84,22 +84,23 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static com.mopub.mobileads.MraidCommandRegistry.MRAID_JAVASCRIPT_COMMAND_CREATE_CALENDAR_EVENT;
-import static com.mopub.mobileads.MraidCommandRegistry.MRAID_JAVASCRIPT_COMMAND_GET_CURRENT_POSITION;
-import static com.mopub.mobileads.MraidCommandRegistry.MRAID_JAVASCRIPT_COMMAND_GET_DEFAULT_POSITION;
-import static com.mopub.mobileads.MraidCommandRegistry.MRAID_JAVASCRIPT_COMMAND_GET_MAX_SIZE;
-import static com.mopub.mobileads.MraidCommandRegistry.MRAID_JAVASCRIPT_COMMAND_GET_SCREEN_SIZE;
-import static com.mopub.mobileads.MraidCommandRegistry.MRAID_JAVASCRIPT_COMMAND_STORE_PICTURE;
+import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand.CREATE_CALENDAR_EVENT;
+import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand.EXPAND;
+import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand.GET_CURRENT_POSITION;
+import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand.GET_DEFAULT_POSITION;
+import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand.GET_MAX_SIZE;
+import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand.GET_SCREEN_SIZE;
+import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand.STORE_PICTURE;
 import static com.mopub.mobileads.MraidCommandStorePicture.MIME_TYPE_HEADER;
 import static com.mopub.mobileads.MraidView.BaseMraidListener;
 import static com.mopub.mobileads.resource.Drawables.INTERSTITIAL_CLOSE_BUTTON_NORMAL;
 import static com.mopub.mobileads.resource.Drawables.INTERSTITIAL_CLOSE_BUTTON_PRESSED;
-import static com.mopub.mobileads.util.MraidUtils.ANDROID_CALENDAR_CONTENT_TYPE;
-import static com.mopub.mobileads.util.MraidUtils.isCalendarAvailable;
-import static com.mopub.mobileads.util.MraidUtils.isInlineVideoAvailable;
-import static com.mopub.mobileads.util.MraidUtils.isSmsAvailable;
-import static com.mopub.mobileads.util.MraidUtils.isStorePictureSupported;
-import static com.mopub.mobileads.util.MraidUtils.isTelAvailable;
+import static com.mopub.mobileads.util.Mraids.ANDROID_CALENDAR_CONTENT_TYPE;
+import static com.mopub.mobileads.util.Mraids.isCalendarAvailable;
+import static com.mopub.mobileads.util.Mraids.isInlineVideoAvailable;
+import static com.mopub.mobileads.util.Mraids.isSmsAvailable;
+import static com.mopub.mobileads.util.Mraids.isStorePictureSupported;
+import static com.mopub.mobileads.util.Mraids.isTelAvailable;
 import static com.mopub.mobileads.util.ResponseHeader.LOCATION;
 
 class MraidDisplayController extends MraidAbstractController {
@@ -126,22 +127,6 @@ class MraidDisplayController extends MraidAbstractController {
 
     // A reference to the root view.
     private FrameLayout mRootView;
-
-    // Tracks whether this controller's view is currently on-screen.
-    private boolean mIsViewable;
-
-    // Task that periodically checks whether this controller's view is on-screen.
-    private Runnable mCheckViewabilityTask = new Runnable() {
-        public void run() {
-            boolean currentViewable = checkViewable();
-            if (mIsViewable != currentViewable) {
-                mIsViewable = currentViewable;
-                getMraidView().fireChangeEventForProperty(
-                        MraidViewableProperty.createWithViewable(mIsViewable));
-            }
-            mHandler.postDelayed(this, VIEWABILITY_TIMER_MILLIS);
-        }
-    };
 
     // Handler for scheduling viewability checks.
     private Handler mHandler = new Handler();
@@ -198,7 +183,6 @@ class MraidDisplayController extends MraidAbstractController {
     private void initialize() {
         mViewState = ViewState.LOADING;
         initializeScreenMetrics();
-        initializeViewabilityTimer();
         mOrientationBroadcastReceiver.register(getContext());
     }
 
@@ -226,11 +210,6 @@ class MraidDisplayController extends MraidAbstractController {
         mScreenHeight = (int) (heightPixels * (160.0 / metrics.densityDpi));
     }
 
-    private void initializeViewabilityTimer() {
-        mHandler.removeCallbacks(mCheckViewabilityTask);
-        mHandler.post(mCheckViewabilityTask);
-    }
-
     private int getDisplayRotation() {
         WindowManager wm = (WindowManager) getContext()
                 .getSystemService(Context.WINDOW_SERVICE);
@@ -244,7 +223,6 @@ class MraidDisplayController extends MraidAbstractController {
     }
 
     public void destroy() {
-        mHandler.removeCallbacks(mCheckViewabilityTask);
         try {
             mOrientationBroadcastReceiver.unregister();
         } catch (IllegalArgumentException e) {
@@ -257,7 +235,7 @@ class MraidDisplayController extends MraidAbstractController {
     protected void initializeJavaScriptState() {
         ArrayList<MraidProperty> properties = new ArrayList<MraidProperty>();
         properties.add(MraidScreenSizeProperty.createWithSize(mScreenWidth, mScreenHeight));
-        properties.add(MraidViewableProperty.createWithViewable(mIsViewable));
+        properties.add(MraidViewableProperty.createWithViewable(getMraidView().getIsVisible()));
         getMraidView().fireChangeEventForProperties(properties);
 
         mViewState = ViewState.DEFAULT;
@@ -305,7 +283,7 @@ class MraidDisplayController extends MraidAbstractController {
         if (mExpansionStyle == MraidView.ExpansionStyle.DISABLED) return;
 
         if (url != null && !URLUtil.isValidUrl(url)) {
-            getMraidView().fireErrorEvent(MraidCommandRegistry.MRAID_JAVASCRIPT_COMMAND_EXPAND, "URL passed to expand() was invalid.");
+            getMraidView().fireErrorEvent(EXPAND, "URL passed to expand() was invalid.");
             return;
         }
 
@@ -349,7 +327,7 @@ class MraidDisplayController extends MraidAbstractController {
     protected void showUserDownloadImageAlert(String imageUrl) {
         Context context = getContext();
         if (!isStorePictureSupported(context)) {
-            getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_STORE_PICTURE, "Error downloading file - the device does not have an SD card mounted, or the Android permission is not granted.");
+            getMraidView().fireErrorEvent(STORE_PICTURE, "Error downloading file - the device does not have an SD card mounted, or the Android permission is not granted.");
             Log.d("MoPub", "Error downloading file - the device does not have an SD card mounted, or the Android permission is not granted.");
             return;
         }
@@ -410,7 +388,7 @@ class MraidDisplayController extends MraidAbstractController {
                         @Override
                         public void run() {
                             showUserToast("Image failed to download.");
-                            getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_STORE_PICTURE, "Error downloading and saving image file.");
+                            getMraidView().fireErrorEvent(STORE_PICTURE, "Error downloading and saving image file.");
                             Log.d("MoPub", "Error downloading and saving image file.");
                         }
                     });
@@ -446,28 +424,28 @@ class MraidDisplayController extends MraidAbstractController {
     }
 
     protected void showVideo(String videoUrl) {
-        MraidVideoPlayerActivity.start(getContext(), getMraidView(), videoUrl);
+        MraidVideoPlayerActivity.startMraid(getContext(), videoUrl);
     }
 
     protected void getCurrentPosition(){
-        getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_GET_CURRENT_POSITION, "Unsupported action getCurrentPosition");
+        getMraidView().fireErrorEvent(GET_CURRENT_POSITION, "Unsupported action getCurrentPosition");
     }
 
     protected void getDefaultPosition(){
-        getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_GET_DEFAULT_POSITION, "Unsupported action getDefaultPosition");
+        getMraidView().fireErrorEvent(GET_DEFAULT_POSITION, "Unsupported action getDefaultPosition");
     }
 
     protected void getMaxSize(){
-        getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_GET_MAX_SIZE, "Unsupported action getMaxSize");
+        getMraidView().fireErrorEvent(GET_MAX_SIZE, "Unsupported action getMaxSize");
     }
 
     protected void getScreenSize(){
-        getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_GET_SCREEN_SIZE, "Unsupported action getScreenSize");
+        getMraidView().fireErrorEvent(GET_SCREEN_SIZE, "Unsupported action getScreenSize");
     }
 
     protected void createCalendarEvent(Map<String, String> params) {
         Context context = getMraidView().getContext();
-        if (MraidUtils.isCalendarAvailable(context)) {
+        if (Mraids.isCalendarAvailable(context)) {
             try {
                 Map<String, Object> calendarParams = translateJSParamsToAndroidCalendarEventMapping(params);
                 Intent intent = new Intent(Intent.ACTION_INSERT).setType(ANDROID_CALENDAR_CONTENT_TYPE);
@@ -485,17 +463,17 @@ class MraidDisplayController extends MraidAbstractController {
                 context.startActivity(intent);
             } catch (ActivityNotFoundException anfe) {
                 Log.d(LOGTAG, "no calendar app installed");
-                getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_CREATE_CALENDAR_EVENT, "Action is unsupported on this device - no calendar app installed");
+                getMraidView().fireErrorEvent(CREATE_CALENDAR_EVENT, "Action is unsupported on this device - no calendar app installed");
             } catch (IllegalArgumentException iae) {
                 Log.d(LOGTAG, "create calendar: invalid parameters " + iae.getMessage());
-                getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_CREATE_CALENDAR_EVENT, iae.getMessage());
+                getMraidView().fireErrorEvent(CREATE_CALENDAR_EVENT, iae.getMessage());
             } catch (Exception exception){
                 Log.d(LOGTAG, "could not create calendar event");
-                getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_CREATE_CALENDAR_EVENT, "could not create calendar event");
+                getMraidView().fireErrorEvent(CREATE_CALENDAR_EVENT, "could not create calendar event");
             }
         } else {
             Log.d(LOGTAG, "unsupported action createCalendarEvent for devices pre-ICS");
-            getMraidView().fireErrorEvent(MRAID_JAVASCRIPT_COMMAND_CREATE_CALENDAR_EVENT, "Action is unsupported on this device (need Android version Ice Cream Sandwich or above)");
+            getMraidView().fireErrorEvent(CREATE_CALENDAR_EVENT, "Action is unsupported on this device (need Android version Ice Cream Sandwich or above)");
         }
     }
 
@@ -767,10 +745,6 @@ class MraidDisplayController extends MraidAbstractController {
         if (view.getOnCloseButtonStateChangeListener() != null) {
             view.getOnCloseButtonStateChangeListener().onCloseButtonStateChange(view, enabled);
         }
-    }
-
-    protected boolean checkViewable() {
-        return true;
     }
 
     FrameLayout createAdContainerLayout() {
