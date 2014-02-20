@@ -24,10 +24,13 @@ Here's how to update and integrate this SDK into the MFP Android App.
 
 - Build and install into maven repo
 
+```
 	% mvn clean install
+```
 
 - Install into android app local repo
 
+```
 	% cd ../android-app/maven_repo_3rd_party
 
 	% install.sh -f /your/.m2/repo/com/mopub/mobileads/mopub-sdk/<version>/mopub-sdk-<version>.jar -g com.mopub.mobileads -a mopub-sdk -v <version> -p jar
@@ -35,9 +38,8 @@ Here's how to update and integrate this SDK into the MFP Android App.
 	% git add com/mopub/mobileads
 
 	% git commit -a -m "update to version <version> of mopub"
-
 	% git push origin <branchname>
-
+```
 
 # MoPub Android SDK
 
