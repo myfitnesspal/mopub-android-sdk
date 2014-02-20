@@ -8,11 +8,11 @@ Here's how to update and integrate this SDK into the MFP Android App.
 
 - Fetch and merge upstream every time it changes
 
-...
+```
 	% git fetch upstream
 
 	% git merge upstream/master
-...
+```
 
 - Change pom.xml to reflect the new version number
 
