@@ -37,6 +37,23 @@ Here's how to update and integrate this SDK into the MFP Android App.
 	% git push origin <branchname>
 ```
 
+- Change the version in app/pom.xml
+
+```xml
+    <dependency>
+        <groupId>com.mopub.mobileads</groupId>
+        <artifactId>mopub-sdk</artifactId>
+        <version>1.17.2.0</version>
+        <exclusions>
+            <exclusion>
+                <groupId>com.google.android</groupId>
+                <artifactId>support-v4</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+```
+
+
 # MoPub Android SDK
 
 Thanks for taking a look at MoPub! We take pride in having an easy-to-use, flexible monetization solution that works across multiple platforms.
