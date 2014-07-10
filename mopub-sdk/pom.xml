@@ -27,9 +27,8 @@
         <dependency>
             <groupId>com.google.android</groupId>
             <artifactId>support-v4</artifactId>
-            <version>r7</version>
+            <version>r13</version>
         </dependency>
-
 
         <!--test-->
         <dependency>
@@ -113,7 +112,7 @@
             <plugin>
                 <groupId>com.jayway.maven.plugins.android.generation2</groupId>
                 <artifactId>android-maven-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.8.2</version>
                 <configuration>
                     <sdk>
                         <!-- platform or api level (api level 4 = platform 1.6)-->
@@ -128,6 +127,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.6</version>
                 <configuration>
+                    <argLine>-Xms512m -Xmx1024m -XX:MaxPermSize=256m</argLine>
                     <excludes>
                         <exclude>**/Test*.java</exclude>
                     </excludes>
