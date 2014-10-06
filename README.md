@@ -68,7 +68,7 @@ The MoPub SDK is distributed as source code that you can include in your applica
 
 - **[MoPub Android Full SDK.zip](http://bit.ly/YUdU9v)**
 
-  Includes everything you need to serve HTML and MRAID MoPub advertisiments *and* built-in support for two major third party ad networks - [Google AdMob](http://www.google.com/ads/admob/) and [Millennial Media](http://www.millennialmedia.com/) - including the required third party binaries.
+  Includes everything you need to serve HTML and MRAID MoPub advertisiments *and* built-in support for Millennial Media third party ad network - [Millennial Media](http://www.millennialmedia.com/) - including the required third party binaries.
 
 - **[MoPub Android Base SDK.zip](http://bit.ly/YUdWhH)**
 
@@ -83,16 +83,19 @@ Integration instructions are available on the [wiki](https://github.com/mopub/mo
 
 Please view the [changelog](https://github.com/mopub/mopub-android-sdk/blob/master/CHANGELOG.md) for details.
 
-  - **Native ads mediation** release; integration instructions and documentation are available on the [GitHub wiki](https://github.com/mopub/mopub-android-sdk/wiki/Integrating-Native-Third-Party-Ad-Networks). Added custom event native implementations to the native extras directory of the SDK (`/extras/src/com/mopub/nativeads`), with initial support for the following networks:
-  	- Facebook Audience Network (`FacebookNative.java`)
-  	- InMobi Native Ads (`InMobiNative.java`)
-  - **Native ads content filtering**: Added the ability to specify which native ad elements you want to receive from the MoPub Marketplace to optimize bandwidth use and download only required assets, via `RequestParameters.Builder#desiredAssets(…)`. This feature only works for the six standard Marketplace assets, found in `RequestParameters.NativeAdAsset`. Any additional elements added in direct sold ads will always be sent down in the extras.
-  - Added star rating information to the `NativeResponse` object, via `NativeResponse#getStarRating()`. This method returns a `Double` corresponding to an app's rating on a 5-star scale.
-  - Bug fixes
+  - **Location Settings are now SDK-wide**
+
+  - **Build target SDK is now API Level 19**
+
+  - **Source-level support for Gradle projects**
+
+  - **The SDK now uses Play Services 5.0.89**
+
+  - **Bug fixes**
 
 ## Requirements
 
-Android 2.2 and up
+Android 2.3.1 (API Version 9) and up
 
 ## License
 

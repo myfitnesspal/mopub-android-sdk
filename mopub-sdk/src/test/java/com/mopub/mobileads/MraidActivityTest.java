@@ -32,22 +32,31 @@
 
 package com.mopub.mobileads;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.ImageButton;
-import com.mopub.mobileads.test.support.SdkTestRunner;
+import android.widget.RelativeLayout;
+
+import com.mopub.common.util.Dips;
+import com.mopub.common.test.support.SdkTestRunner;
 import com.mopub.mobileads.test.support.TestMraidViewFactory;
+
 import org.fest.assertions.api.ANDROID;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.Robolectric;
+import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLocalBroadcastManager;
 
 import static com.mopub.mobileads.AdFetcher.AD_CONFIGURATION_KEY;
@@ -72,10 +81,12 @@ public class MraidActivityTest extends BaseInterstitialActivityTest {
 
     private MraidView mraidView;
     private CustomEventInterstitial.CustomEventInterstitialListener customEventInterstitialListener;
+    private Activity context;
 
     @Before
     public void setUp() throws Exception {
         super.setup();
+        context = new Activity();
         Intent mraidActivityIntent = createMraidActivityIntent(EXPECTED_SOURCE);
         mraidView = TestMraidViewFactory.getSingletonMock();
         resetMockedView(mraidView);
@@ -149,6 +160,13 @@ public class MraidActivityTest extends BaseInterstitialActivityTest {
     }
 
     @Test
+    public void onCreate_shouldSetContentView() throws Exception {
+        subject.onCreate(null);
+
+        assertThat(getContentView(subject).getChildCount()).isEqualTo(3);
+    }
+
+    @Test
     public void onCreate_shouldSetupAnMraidView() throws Exception {
         subject.onCreate(null);
 
@@ -160,23 +178,57 @@ public class MraidActivityTest extends BaseInterstitialActivityTest {
     }
 
     @Test
-    public void onCreate_whenICS_shouldSetHardwareAcceleratedFlag() throws Exception {
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", 14);
+    public void onCreate_shouldSetLayoutOfMraidView() throws Exception {
+        subject.onCreate(null);
 
+        ArgumentCaptor<RelativeLayout.LayoutParams> captor = ArgumentCaptor.forClass(RelativeLayout.LayoutParams.class);
+        verify(mraidView).setLayoutParams(captor.capture());
+        RelativeLayout.LayoutParams actualLayoutParams = captor.getValue();
+
+        assertThat(actualLayoutParams.width).isEqualTo(RelativeLayout.LayoutParams.MATCH_PARENT);
+        assertThat(actualLayoutParams.height).isEqualTo(RelativeLayout.LayoutParams.MATCH_PARENT);
+    }
+
+    @Test
+    public void onCreate_shouldAddCloseEventRegion() throws Exception {
+        subject.onCreate(null);
+
+        final Button closeEventRegion = (Button) getContentView(subject).getChildAt(2);
+        assertThat(closeEventRegion.getVisibility()).isEqualTo(View.VISIBLE);
+        assertThat(shadowOf(closeEventRegion).getBackgroundColor()).isEqualTo(Color.TRANSPARENT);
+        assertThat(Dips.pixelsToIntDips((float) closeEventRegion.getLayoutParams().width, context)).isEqualTo(50);
+        assertThat(Dips.pixelsToIntDips((float) closeEventRegion.getLayoutParams().height, context)).isEqualTo(50);
+        assertThat(((RelativeLayout.LayoutParams)closeEventRegion.getLayoutParams()).getRules()[RelativeLayout.ALIGN_PARENT_TOP])
+                .isEqualTo(RelativeLayout.TRUE);
+        assertThat(((RelativeLayout.LayoutParams)closeEventRegion.getLayoutParams()).getRules()[RelativeLayout.ALIGN_PARENT_RIGHT])
+                .isEqualTo(RelativeLayout.TRUE);
+    }
+
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
+    @Test
+    public void onCreate_atLeastIcs_shouldSetHardwareAcceleratedFlag() throws Exception {
         subject.onCreate(null);
 
         boolean hardwareAccelerated = shadowOf(subject.getWindow()).getFlag(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
         assertThat(hardwareAccelerated).isTrue();
     }
 
+    @Config(reportSdk = VERSION_CODES.HONEYCOMB_MR2)
     @Test
-    public void onCreate_whenPreICS_shouldNotSetHardwareAcceleratedFlag() throws Exception {
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", 13);
-
+    public void onCreate_beforeIcs_shouldNotSetHardwareAcceleratedFlag() throws Exception {
         subject.onCreate(null);
 
         boolean hardwareAccelerated = shadowOf(subject.getWindow()).getFlag(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
         assertThat(hardwareAccelerated).isFalse();
+    }
+
+    @Test
+    public void closeEventRegion_shouldFinishActivityWhenClicked() throws Exception {
+        subject.onCreate(null);
+
+        final Button closeEventRegion = (Button) getContentView(subject).getChildAt(2);
+        assertThat(closeEventRegion.performClick()).isTrue();
+        assertThat(subject.isFinishing()).isTrue();
     }
 
     @Test

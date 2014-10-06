@@ -37,17 +37,22 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.os.Environment;
 import android.provider.CalendarContract;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
+import com.mopub.common.util.Dips;
 import com.mopub.mobileads.test.support.FileUtils;
-import com.mopub.mobileads.test.support.SdkTestRunner;
+import com.mopub.common.test.support.SdkTestRunner;
 import com.mopub.mobileads.test.support.TestHttpResponseWithHeaders;
 import com.mopub.mobileads.test.support.TestMraidViewFactory;
 import com.mopub.mobileads.test.support.ThreadUtils;
@@ -62,21 +67,20 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
+import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowEnvironment;
 import org.robolectric.shadows.ShadowLog;
 import org.robolectric.shadows.ShadowToast;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
 import static android.content.DialogInterface.BUTTON_NEGATIVE;
 import static android.content.DialogInterface.BUTTON_POSITIVE;
-import static com.mopub.common.util.VersionCode.ECLAIR;
-import static com.mopub.common.util.VersionCode.FROYO;
-import static com.mopub.common.util.VersionCode.ICE_CREAM_SANDWICH;
 import static com.mopub.mobileads.BaseVideoPlayerActivitiyTest.assertMraidVideoPlayerActivityStarted;
 import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand.CREATE_CALENDAR_EVENT;
 import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand.GET_CURRENT_POSITION;
@@ -126,6 +130,7 @@ public class MraidDisplayControllerTest {
     private Map<String, String> params;
     private AdConfiguration adConfiguration;
     private long testBroadcastIdentifier;
+
 
     @Before
     public void setup() {
@@ -251,10 +256,10 @@ public class MraidDisplayControllerTest {
         assertThat(mraidSupportsProperty.toJsonPair()).contains("storePicture: true");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
-    public void initializeSupportedFunctionsProperty_whenApiLevelICSAndAbove_shouldReportCalendarAvailable() throws Exception {
+    public void initializeSupportedFunctionsProperty_atLeastIcs_shouldReportCalendarAvailable() throws Exception {
         Context mockContext = createMockContextWithSpecificIntentData(null, null, ANDROID_CALENDAR_CONTENT_TYPE, "android.intent.action.INSERT");
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", ICE_CREAM_SANDWICH.getApiLevel());
         resetMockMraidView(mockContext);
 
         subject.initializeSupportedFunctionsProperty();
@@ -264,10 +269,9 @@ public class MraidDisplayControllerTest {
         assertThat(mraidSupportsProperty.toJsonPair()).contains("calendar: true");
     }
 
+    @Config(reportSdk = VERSION_CODES.HONEYCOMB_MR2)
     @Test
-    public void initializeSupportedFunctionsProperty_whenBelowApiLevelICS_shouldNotReportCalendarAvailable() throws Exception {
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", FROYO.getApiLevel());
-
+    public void initializeSupportedFunctionsProperty_beforeIcs_shouldNotReportCalendarAvailable() throws Exception {
         resetMockMraidView(new Activity());
         subject.initializeSupportedFunctionsProperty();
 
@@ -533,8 +537,9 @@ public class MraidDisplayControllerTest {
         verify(mraidView).fireErrorEvent(eq(GET_SCREEN_SIZE), any(String.class));
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
-    public void createCalendarEvent_withMinimumValidParams_onICS_shouldCreateEventIntent() throws Exception {
+    public void createCalendarEvent_withMinimumValidParams_atLeastICS_shouldCreateEventIntent() throws Exception {
         setupCalendarParams();
 
         subject.createCalendarEvent(params);
@@ -549,8 +554,9 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getLongExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, -1)).isNotEqualTo(-1);
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
-    public void createCalendarEvent_withoutSecondsOnStartDate_onICS_shouldCreateEventIntent() throws Exception {
+    public void createCalendarEvent_withoutSecondsOnStartDate_atLeastICS_shouldCreateEventIntent() throws Exception {
         setupCalendarParams();
         params.put("start", "2012-12-21T00:00-0500");
 
@@ -566,6 +572,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getLongExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, -1)).isNotEqualTo(-1);
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withDailyRecurrence_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -579,6 +586,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=DAILY;");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withDailyRecurrence_withInterval_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -591,6 +599,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=DAILY;INTERVAL=2;");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withWeeklyRecurrence_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -602,6 +611,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=WEEKLY;");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withWeeklyRecurrence_withInterval_withOutWeekday_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -614,6 +624,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=WEEKLY;INTERVAL=7;");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withWeeklyRecurrence_onAllWeekDays_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -626,6 +637,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=WEEKLY;BYDAY=SU,MO,TU,WE,TH,FR,SA;");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withWeeklyRecurrence_onDuplicateWeekDays_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -638,6 +650,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=WEEKLY;BYDAY=WE,TU,SU;");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withWeeklyRecurrence_withInterval_withWeekDay_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -651,6 +664,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=WEEKLY;INTERVAL=1;BYDAY=MO;");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withDailyRecurrence_withWeeklyRecurrence_withMonthlyOccurence_shouldCreateDailyCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -666,7 +680,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=DAILY;INTERVAL=2;");
     }
 
-
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withMonthlyRecurrence_withOutInterval_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -678,6 +692,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=MONTHLY;");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withMonthlyRecurrence_withInterval_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -690,6 +705,7 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getStringExtra(CalendarContract.Events.RRULE)).isEqualTo("FREQ=MONTHLY;INTERVAL=2;");
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void createCalendarEvent_withMonthlyRecurrence_withOutInterval_withDaysOfMonth_shouldCreateCalendarIntent() throws Exception {
         setupCalendarParams();
@@ -730,10 +746,10 @@ public class MraidDisplayControllerTest {
         assertThat(ShadowLog.getLogs().size()).isEqualTo(1);
     }
 
+    @Config(reportSdk = VERSION_CODES.HONEYCOMB_MR2)
     @Test
-    public void createCalendarEvent_onPreICSDevice_shouldFireErrorEvent() throws Exception {
+    public void createCalendarEvent_beforeIcs_shouldFireErrorEvent() throws Exception {
         resetMockMraidView(new Activity());
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", ECLAIR.getApiLevel());
 
         subject.createCalendarEvent(params);
 
@@ -743,7 +759,6 @@ public class MraidDisplayControllerTest {
     @Test
     public void createCalendarEvent_withInvalidDate_shouldFireErrorEvent() throws Exception {
         resetMockMraidView(new Activity());
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", ICE_CREAM_SANDWICH.getApiLevel());
         params.put("start", "2013-08-14T09:00.-08:00");
         params.put("description", "Some Event");
 
@@ -755,7 +770,6 @@ public class MraidDisplayControllerTest {
     @Test
     public void createCalendarEvent_withMissingParameters_shouldFireErrorEvent() throws Exception {
         resetMockMraidView(new Activity());
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", ICE_CREAM_SANDWICH.getApiLevel());
         //it needs a start time
         params.put("description", "Some Event");
 
@@ -767,7 +781,6 @@ public class MraidDisplayControllerTest {
     @Test
     public void createCalendarEvent_withNullDate_shouldFireErrorEvent() throws Exception {
         resetMockMraidView(new Activity());
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", ICE_CREAM_SANDWICH.getApiLevel());
         params.put("start", null);
         params.put("description", "Some Event");
 
@@ -776,8 +789,10 @@ public class MraidDisplayControllerTest {
         verify(mraidView).fireErrorEvent(eq(CREATE_CALENDAR_EVENT), any(String.class));
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
-    public void createCalendarEvent_withValidParamsAllExceptRecurrence_onICS_shouldCreateEventIntent() throws Exception {
+    public void
+    createCalendarEvent_withValidParamsAllExceptRecurrence_atLeastICS_shouldCreateEventIntent() throws Exception {
         setupCalendarParams();
         params.put("location", "my house");
         params.put("end", "2013-08-14T22:01:01-0000");
@@ -796,6 +811,21 @@ public class MraidDisplayControllerTest {
         assertThat(intent.getLongExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, -1)).isNotEqualTo(-1);
         assertThat(intent.getLongExtra(CalendarContract.EXTRA_EVENT_END_TIME, -1)).isNotEqualTo(-1);
         assertThat(intent.getIntExtra(CalendarContract.Events.AVAILABILITY, -1)).isEqualTo(CalendarContract.Events.AVAILABILITY_FREE);
+    }
+
+    @Test
+    public void addCloseEventRegion_shouldAddCloseEventRegionToFrameLayout() throws Exception {
+        Activity activity = new Activity();
+        FrameLayout frameLayout = new FrameLayout(activity);
+        subject.addCloseEventRegion(frameLayout);
+
+        final Button closeEventRegion = (Button) frameLayout.getChildAt(0);
+        assertThat(closeEventRegion.getVisibility()).isEqualTo(View.VISIBLE);
+        assertThat(shadowOf(closeEventRegion).getBackgroundColor()).isEqualTo(Color.TRANSPARENT);
+        assertThat(shadowOf(closeEventRegion).getOnClickListener()).isEqualTo(subject.getCloseOnClickListener());
+        assertThat(Dips.pixelsToIntDips((float)closeEventRegion.getLayoutParams().width, activity)).isEqualTo(50);
+        assertThat(Dips.pixelsToIntDips((float)closeEventRegion.getLayoutParams().height, activity)).isEqualTo(50);
+        assertThat(((FrameLayout.LayoutParams)closeEventRegion.getLayoutParams()).gravity).isEqualTo(Gravity.TOP | Gravity.RIGHT);
     }
 
     private void resetMockMraidView(Context context) {
@@ -851,7 +881,6 @@ public class MraidDisplayControllerTest {
         }).when(mockContext).startActivity(any(Intent.class));
 
         resetMockMraidView(mockContext);
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", ICE_CREAM_SANDWICH.getApiLevel());
         params.put("description", "Some Event");
         params.put("start", CALENDAR_START_TIME);
     }

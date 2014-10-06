@@ -43,6 +43,7 @@ import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import com.mopub.common.logging.MoPubLog;
 import com.mopub.common.util.Strings;
 import com.mopub.mobileads.factories.HttpClientFactory;
 import com.mopub.mobileads.resource.MraidJavascript;
@@ -55,9 +56,12 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.mopub.mobileads.MraidCommandFactory.MraidJavascriptCommand;
 import static com.mopub.mobileads.ViewGestureDetector.UserClickListener;
@@ -224,7 +228,7 @@ public class MraidView extends BaseWebView implements UserClickListener {
                 outString = Strings.fromStream(entity.getContent());
             }
         } catch (IllegalArgumentException e) {
-            Log.d("MoPub", "Mraid loadUrl failed (IllegalArgumentException): "+url);
+            MoPubLog.d("Mraid loadUrl failed (IllegalArgumentException): " + url);
             notifyOnFailureListener();
             return;
         } catch (ClientProtocolException e) {

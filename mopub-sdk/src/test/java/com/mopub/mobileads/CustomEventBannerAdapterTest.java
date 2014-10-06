@@ -37,7 +37,7 @@ import android.content.Context;
 import android.location.Location;
 import android.view.View;
 import com.mopub.mobileads.factories.CustomEventBannerFactory;
-import com.mopub.mobileads.test.support.SdkTestRunner;
+import com.mopub.common.test.support.SdkTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,6 +61,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.verify;
+
 
 @RunWith(SdkTestRunner.class)
 public class CustomEventBannerAdapterTest {

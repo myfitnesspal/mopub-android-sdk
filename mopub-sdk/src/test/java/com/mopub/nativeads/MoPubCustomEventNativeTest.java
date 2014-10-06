@@ -3,7 +3,8 @@ package com.mopub.nativeads;
 import android.app.Activity;
 
 import com.mopub.common.CacheService;
-import com.mopub.nativeads.test.support.SdkTestRunner;
+import com.mopub.nativeads.test.support.MoPubShadowBitmap;
+import com.mopub.common.test.support.SdkTestRunner;
 
 import org.apache.http.HttpRequest;
 import org.json.JSONArray;
@@ -13,6 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
+import org.robolectric.annotation.Config;
 import org.robolectric.tester.org.apache.http.FakeHttpLayer;
 import org.robolectric.tester.org.apache.http.RequestMatcher;
 import org.robolectric.tester.org.apache.http.TestHttpResponse;
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
 @RunWith(SdkTestRunner.class)
+@Config(shadows={MoPubShadowBitmap.class})
 public class MoPubCustomEventNativeTest {
 
     private MoPubCustomEventNative subject;
@@ -79,7 +82,7 @@ public class MoPubCustomEventNativeTest {
     public void loadNativeAd_withValidInput_shouldDownloadImagesAndNotifyListenerOfOnNativeAdLoaded() throws Exception {
         subject.loadNativeAd(context, mCustomEventNativeListener, localExtras, serverExtras);
 
-        assertHttpRequestsMade("mainimageurl", "iconimageurl", "extraimageurl");
+        assertHttpRequestsMade(null, "mainimageurl", "iconimageurl", "extraimageurl");
 
         verify(mCustomEventNativeListener).onNativeAdLoaded(any(MoPubCustomEventNative.MoPubForwardingNativeAd.class));
         verify(mCustomEventNativeListener, never()).onNativeAdFailed(any(NativeErrorCode.class));

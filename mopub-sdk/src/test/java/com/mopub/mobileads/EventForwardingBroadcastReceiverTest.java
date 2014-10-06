@@ -38,9 +38,8 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.mopub.mobileads.factories.CustomEventInterstitialAdapterFactory;
-import com.mopub.mobileads.test.support.SdkTestRunner;
+import com.mopub.common.test.support.SdkTestRunner;
 
-import org.fest.util.Lists;
 import org.fest.util.Sets;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -48,7 +47,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.shadows.ShadowLocalBroadcastManager;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -84,6 +82,7 @@ public class EventForwardingBroadcastReceiverTest {
         context = new Activity();
     }
 
+    // takes place in the loading and showing of an interstitial.
     @Ignore("pending")
     @Test
     public void twoDifferentInterstitials_shouldNotHearEachOthersBroadcasts() throws Exception {

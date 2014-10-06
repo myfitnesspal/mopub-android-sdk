@@ -34,21 +34,11 @@ package com.mopub.mobileads;
 
 import android.app.Activity;
 import android.content.Context;
-import com.mopub.mobileads.test.support.SdkTestRunner;
+import com.mopub.common.test.support.SdkTestRunner;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.ADMOB_BANNER;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.ADMOB_INTERSTITIAL;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.HTML_BANNER;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.HTML_INTERSTITIAL;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.MILLENNIAL_BANNER;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.MILLENNIAL_INTERSTITIAL;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.MRAID_BANNER;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.MRAID_INTERSTITIAL;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.VAST_VIDEO_INTERSTITIAL;
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.stub;
@@ -71,27 +61,17 @@ public class AdTypeTranslatorTest {
     }
 
     @Test
-    public void getAdMobBanner() throws Exception {
+    public void getAdMobBannerReturnsGooglePlayServicesBanner() throws Exception {
         customEventName = AdTypeTranslator.getCustomEventNameForAdType(moPubView, "admob_native", null);
 
-        assertThat(customEventName).isEqualTo("com.mopub.mobileads.GoogleAdMobBanner");
+        assertThat(customEventName).isEqualTo("com.mopub.mobileads.GooglePlayServicesBanner");
     }
 
     @Test
-    public void getAdMobInterstitial() throws Exception {
+    public void getAdMobInterstitialReturnsGooglePlayServicesInterstitial() throws Exception {
         customEventName = AdTypeTranslator.getCustomEventNameForAdType(moPubInterstitialView, "interstitial", "admob_full");
 
-        assertThat(customEventName).isEqualTo("com.mopub.mobileads.GoogleAdMobInterstitial");
-    }
-
-    @Ignore("pending")
-    @Test
-    public void getGooglePlayServicesBanner() throws Exception {
-    }
-
-    @Ignore("pending")
-    @Test
-    public void getGooglePlayServicesInterstitial() throws Exception {
+        assertThat(customEventName).isEqualTo("com.mopub.mobileads.GooglePlayServicesInterstitial");
     }
 
     @Test

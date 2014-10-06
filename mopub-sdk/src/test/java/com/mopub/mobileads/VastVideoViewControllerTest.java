@@ -9,9 +9,11 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.LayerDrawable;
 import android.media.MediaPlayer;
 import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.VideoView;
 
@@ -20,7 +22,7 @@ import com.mopub.common.util.Dips;
 import com.mopub.common.util.Drawables;
 import com.mopub.common.util.VersionCode;
 import com.mopub.mobileads.test.support.GestureUtils;
-import com.mopub.mobileads.test.support.SdkTestRunner;
+import com.mopub.common.test.support.SdkTestRunner;
 import com.mopub.mobileads.util.vast.VastCompanionAd;
 import com.mopub.mobileads.util.vast.VastVideoConfiguration;
 
@@ -33,7 +35,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.Robolectric;
-import org.robolectric.shadows.ShadowHandler;
+import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLocalBroadcastManager;
 import org.robolectric.shadows.ShadowVideoView;
 import org.robolectric.tester.org.apache.http.RequestMatcher;
@@ -78,6 +80,7 @@ public class VastVideoViewControllerTest {
     private BaseVideoViewControllerListener baseVideoViewControllerListener;
     private EventForwardingBroadcastReceiver broadcastReceiver;
     private int expectedBrowserRequestCode;
+    private String expectedUserAgent;
 
     @Before
     public void setUp() throws Exception {
@@ -125,6 +128,8 @@ public class VastVideoViewControllerTest {
         }, new TestHttpResponse(200, "body"));
 
         ShadowLocalBroadcastManager.getInstance(context).registerReceiver(broadcastReceiver, getHtmlInterstitialIntentFilter());
+
+        expectedUserAgent = new WebView(context).getSettings().getUserAgentString();
     }
 
     @After
@@ -154,7 +159,7 @@ public class VastVideoViewControllerTest {
         Robolectric.getBackgroundScheduler().unPause();
         Thread.sleep(NETWORK_DELAY);
 
-        assertHttpRequestsMade("imp");
+        assertHttpRequestsMade(expectedUserAgent, "imp");
     }
 
     @Test
@@ -282,6 +287,7 @@ public class VastVideoViewControllerTest {
         Thread.sleep(NETWORK_DELAY);
 
         assertHttpRequestsMade(
+                expectedUserAgent,
                 "companion_image_url",
                 "imp",
                 "companion_click_tracking_url_1",
@@ -343,6 +349,7 @@ public class VastVideoViewControllerTest {
 
         verify(baseVideoViewControllerListener, never()).onFinish();
     }
+
 
     @Test
     public void onTouch_withTouchUp_whenVideoLessThan16Seconds_andClickBeforeEnd_shouldDoNothing() throws Exception {
@@ -446,7 +453,7 @@ public class VastVideoViewControllerTest {
         Robolectric.getBackgroundScheduler().unPause();
         Thread.sleep(NETWORK_DELAY);
 
-        assertHttpRequestsMade("click_1", "click_2");
+        assertHttpRequestsMade(expectedUserAgent, "click_1", "click_2");
     }
 
     @Test
@@ -494,6 +501,8 @@ public class VastVideoViewControllerTest {
         stub(mediaPlayer.getDuration()).toReturn(1000);
         setMediaPlayer(mediaPlayer);
 
+        // this callback is typically called when the media filed is loaded and ready to play
+        // invoke this manually since we are using a mock url and don't want to wait
         final OnPreparedListener onPreparedListener = getShadowVideoView().getOnPreparedListener();
         onPreparedListener.onPrepared(null);
 
@@ -536,7 +545,7 @@ public class VastVideoViewControllerTest {
         Robolectric.getBackgroundScheduler().unPause();
         Thread.sleep(NETWORK_DELAY);
 
-        assertHttpRequestsMade("complete_1", "complete_2");
+        assertHttpRequestsMade(expectedUserAgent, "complete_1", "complete_2");
     }
 
     @Test
@@ -623,12 +632,11 @@ public class VastVideoViewControllerTest {
         assertThat(subject.getIsVideoProgressShouldBeChecked()).isFalse();
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
     @Test
     public void onError_withVideoFilePermissionErrorBelowJellyBean_shouldRetryPlayingTheVideo() throws Exception {
         File file = new File("disk_video_path");
         file.createNewFile();
-
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", VersionCode.ICE_CREAM_SANDWICH_MR1.getApiLevel());
 
         initializeSubject();
 
@@ -643,13 +651,12 @@ public class VastVideoViewControllerTest {
         file.delete();
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
     @Test
     public void retryMediaPlayer_withVideoFilePermissionErrorAndBelowJellyBean_shouldReturnTrue() throws Exception {
         File file = new File("disk_video_path");
         file.createNewFile();
 
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", VersionCode.ICE_CREAM_SANDWICH_MR1.getApiLevel());
-
         initializeSubject();
 
         assertThat(subject.getVideoRetries()).isEqualTo(0);
@@ -659,13 +666,12 @@ public class VastVideoViewControllerTest {
         file.delete();
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
     @Test
     public void retryMediaPlayer_shouldNotRunMoreThanOnce() throws Exception {
         File file = new File("disk_video_path");
         file.createNewFile();
 
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", VersionCode.ICE_CREAM_SANDWICH_MR1.getApiLevel());
-
         initializeSubject();
 
         assertThat(subject.getVideoRetries()).isEqualTo(0);
@@ -678,12 +684,11 @@ public class VastVideoViewControllerTest {
         file.delete();
     }
 
+    @Config(reportSdk = VERSION_CODES.JELLY_BEAN)
     @Test
     public void retryMediaPlayer_withAndroidVersionAboveJellyBean_shouldReturnFalse() throws Exception {
         File file = new File("disk_video_path");
         file.createNewFile();
-
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", VersionCode.JELLY_BEAN.getApiLevel());
 
         initializeSubject();
 
@@ -694,12 +699,11 @@ public class VastVideoViewControllerTest {
         file.delete();
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void retryMediaPlayer_withOtherVideoError_shouldReturnFalse() throws Exception {
         File file = new File("disk_video_path");
         file.createNewFile();
-
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", VersionCode.ICE_CREAM_SANDWICH.getApiLevel());
 
         initializeSubject();
 
@@ -710,15 +714,13 @@ public class VastVideoViewControllerTest {
         file.delete();
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void retryMediaPlayer_withExceptionThrown_shouldReturnFalseAndIncrementRetryCount() throws Exception {
         File file = new File("disk_video_path");
         if (file.exists()){
             assertThat(file.delete()).isTrue();
         }
-
-        // No file will cause FileInputStream to throw
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", VersionCode.ICE_CREAM_SANDWICH.getApiLevel());
 
         initializeSubject();
 
@@ -748,7 +750,7 @@ public class VastVideoViewControllerTest {
         Robolectric.getBackgroundScheduler().unPause();
         Thread.sleep(NETWORK_DELAY);
 
-        assertHttpRequestsMade("first", "second", "third");
+        assertHttpRequestsMade(expectedUserAgent, "first", "second", "third");
     }
 
     @Test
@@ -796,7 +798,7 @@ public class VastVideoViewControllerTest {
         Thread.sleep(NETWORK_DELAY);
 
         // Since it has not yet been a second, we expect that the start tracker has not been fired
-        assertHttpRequestsMade();
+        assertHttpRequestsMade(expectedUserAgent);
         Robolectric.getFakeHttpLayer().clearRequestInfos();
 
         // run checker another time
@@ -828,7 +830,7 @@ public class VastVideoViewControllerTest {
 
         Thread.sleep(NETWORK_DELAY);
 
-        assertHttpRequestsMade("start");
+        assertHttpRequestsMade(expectedUserAgent, "start");
         Robolectric.getFakeHttpLayer().clearRequestInfos();
 
         // run checker another time
@@ -859,7 +861,7 @@ public class VastVideoViewControllerTest {
         Robolectric.getBackgroundScheduler().unPause();
         Thread.sleep(NETWORK_DELAY);
 
-        assertHttpRequestsMade("first");
+        assertHttpRequestsMade(expectedUserAgent, "first");
         Robolectric.getFakeHttpLayer().clearRequestInfos();
 
         // run checker another time
@@ -889,7 +891,7 @@ public class VastVideoViewControllerTest {
         Robolectric.getBackgroundScheduler().unPause();
         Thread.sleep(NETWORK_DELAY);
 
-        assertHttpRequestsMade("first", "second");
+        assertHttpRequestsMade(expectedUserAgent, "first", "second");
         Robolectric.getFakeHttpLayer().clearRequestInfos();
 
         Robolectric.getUiThreadScheduler().runOneTask();
@@ -919,7 +921,7 @@ public class VastVideoViewControllerTest {
         Robolectric.getBackgroundScheduler().unPause();
         Thread.sleep(NETWORK_DELAY);
 
-        assertHttpRequestsMade("first", "second", "third");
+        assertHttpRequestsMade(expectedUserAgent, "first", "second", "third");
         Robolectric.getFakeHttpLayer().clearRequestInfos();
 
         Robolectric.getUiThreadScheduler().runOneTask();
@@ -1023,12 +1025,11 @@ public class VastVideoViewControllerTest {
         assertThat(getShadowVideoView().getPrevVideoState()).isNotEqualTo(ShadowVideoView.START);
     }
 
+    @Config(reportSdk = VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
     @Test
     public void onResume_shouldResetVideoRetryCountToZero() throws Exception {
         File file = new File("disk_video_path");
         file.createNewFile();
-
-        Robolectric.Reflection.setFinalStaticField(Build.VERSION.class, "SDK_INT", VersionCode.ICE_CREAM_SANDWICH_MR1.getApiLevel());
 
         initializeSubject();
 
@@ -1097,7 +1098,7 @@ public class VastVideoViewControllerTest {
         if (urls == null) {
             assertThat(Robolectric.getNextSentHttpRequest()).isNull();
         } else {
-            assertHttpRequestsMade(urls);
+            assertHttpRequestsMade(expectedUserAgent, urls);
         }
 
         Robolectric.getFakeHttpLayer().clearRequestInfos();
